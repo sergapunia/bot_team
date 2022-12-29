@@ -21,7 +21,7 @@ client = Client(KEY, SECRET, tld='https://testnet.binancefuture.com', testnet=Tr
 stop_percent = 0.004
 eth_proffit_array = [[2.2, 4], [3.5, 3.5], [5.5, 1.5], [7, 1], [80, 2], [150, 1], [200, 1], [200, 0]]
 proffit_array = copy.copy(eth_proffit_array)
-
+# парирумчик
 
 def get_data(symbol):
     output = TA_Handler(symbol=symbol,  # даём на вход параметры

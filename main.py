@@ -18,7 +18,7 @@ KEY = '6ba95e7ed67fff7357a6a9fdca47e350852a2d62668d1db9570e5ae9db99e9c3'
 SECRET = '793aebcbcff748c0350cd24979964541e28cbe8491e2005853c52bec0cd4473f'
 
 client = Client(KEY, SECRET, tld='https://testnet.binancefuture.com', testnet=True)
-stop_percent = 0.004
+# stop_percent = 0.004
 eth_proffit_array = [[2.2, 4], [3.5, 3.5], [5.5, 1.5], [7, 1], [80, 2], [150, 1], [200, 1], [200, 0]]
 proffit_array = copy.copy(eth_proffit_array)
 # парирумчик
@@ -165,57 +165,92 @@ def entry_price(symbol):  # цена входа в позицию
 
 
 
+# def profit_stoploss():
+#     try:
+#         for i in opened_position_long:
+#             temp_arr = copy.copy(proffit_array)
+#             symb_pr = get_symbol_price(i)
+#             stop_loss = entry_price(i) * (1 - stop_percent)
+#             entr_pr = entry_price(i)
+#             if symb_pr<stop_loss:
+#                 close_position(symbol=i,s_l='long')
 
 
 def profit_and_stop_loss():
     try:
         for i in opened_position_long:
-            temp_arr = copy.copy(proffit_array)
+            #temp_arr = copy.copy(proffit_array)
             symb_pr = get_symbol_price(i)
-            stop_loss = entry_price(i) * (1 - stop_percent)
-            entr_pr = entry_price(i)
-            if symb_pr < stop_loss:
-                close_position(symbol=i, s_l='BUY', quantity_l=abs(entr_pr))
-                prt('===STOP_LOSS===')
-                new_balans = get_profit_balance()[1]
-            for j in range(0, len(temp_arr) - 1):
-                maxpos = (my_balans // get_symbol_price(i)) // 10
-                delta = temp_arr[j][0]
-                contracts = temp_arr[j][1]
-                if (symb_pr > (entr_pr + delta)):
-                    close_position(symbol=i, s_l='BUY', quantity_l=
-                    abs(round(maxpos * (contracts / 10), 3)))  # зарыть контракты из массива
+            stop_loss = entry_price(i) * 0.99 * 1.008 #нижняя граница
+            stop_profit = entry_price(i) * 1.01 / 1.008 #верхняя граница
+            #entr_pr = entry_price(i)
+            maxpos = round((my_balans // get_symbol_price(i)) // 10, 1)
+            try:
+                if symb_pr <= stop_loss:
+                    close_position(symbol=i, s_l='long', quantity_l=abs(maxpos))
+                    prt('===STOP_LOSS===')
+                    opened_position_long.remove(i)
                     new_balans = get_profit_balance()[1]
-                    del proffit_array[0]
-        if new_balans != 0:
-            profit = new_balans - my_balans
-            prt(str('Profit: ' + profit))
-            prt(str('Balanse: ' + new_balans))
+                    if new_balans != 0:
+                        profit = new_balans - my_balans
+                        prt(str('Profit: ' + profit))
+                        prt(str('Balanse: ' + new_balans))
+                if symb_pr >= stop_profit:
+                    close_position(symbol=i, s_l='long', quantity_l=abs(maxpos))
+                    prt('====Take_Profit===')
+                    opened_position_long.remove(i)
+                    new_balans = get_profit_balance()[1]
+                    if new_balans != 0:
+                        profit = new_balans - my_balans
+                        prt(str('Profit: ' + profit))
+                        prt(str('Balanse: ' + new_balans))
+            except:
+                pass
+            # for j in range(0, len(temp_arr) - 1):
+            #     maxpos = (my_balans // get_symbol_price(i)) // 10
+            #     delta = temp_arr[j][0]
+            #     contracts = temp_arr[j][1]
+            #     if symb_pr > (entr_pr + delta):
+            #         close_position(symbol=i, s_l='long', quantity_l=
+            #         abs(round(maxpos * (contracts / 10), 3)))  # зарыть контракты из массива
+            #         new_balans = get_profit_balance()[1]
+            #         del proffit_array[0]
     except:
         pass
     try:
-        for i in opened_position_short:
-            temp_arr = copy.copy(proffit_array)
-            symb_pr = get_symbol_price(i)
-            stop_loss = entry_price(i) * (1 - stop_percent)
-            entr_pr = entry_price(i)
-            if symb_pr > stop_loss:
-                close_position(symbol=i, s_l='SELL', quantity_l=abs(entr_pr))
+        for g in opened_position_short:
+            #temp_arr = copy.copy(proffit_array)
+            symb_pr = get_symbol_price(g)
+            stop_loss2 = entry_price(g) * 1.01 / 1.008
+            stop_profit2 = entry_price(g) * 0.99 * 1.008
+            maxpos = round((my_balans // get_symbol_price(g)) // 10, 1)
+            if symb_pr >= stop_loss2:
+                close_position(symbol=g, s_l='short', quantity_l=abs(maxpos))
                 prt('===STOP_LOSS===')
+                opened_position_short.remove(g)
                 new_balans = get_profit_balance()[1]
-            for j in range(0, len(temp_arr) - 1):
-                maxpos = (my_balans // get_symbol_price(i)) // 10
-                delta = temp_arr[j][0]
-                contracts = temp_arr[j][1]
-                if (symb_pr < (entr_pr + delta)):
-                    close_position(symbol=i, s_l='SELL', quantity_l=
-                    abs(round(maxpos * (contracts / 10), 3)))  # зарыть контракты из массива
-                    new_balans = get_profit_balance()[1]
-                    del proffit_array[0]
-        if new_balans != 0:
-            profit = new_balans - my_balans
-            prt(str('Profit: ' + profit))
-            prt(str('Balanse: ' + new_balans))
+                if new_balans != 0:
+                    profit = new_balans - my_balans
+                    prt(str('Profit: ' + profit))
+                    prt(str('Balanse: ' + new_balans))
+            if symb_pr <= stop_profit2:
+                close_position(symbol=g, s_l='short', quantity_l=abs(maxpos))
+                prt('===Take_Profit===')
+                opened_position_short.remove(g)
+                new_balans = get_profit_balance()[1]
+                if new_balans != 0:
+                    profit = new_balans - my_balans
+                    prt(str('Profit: ' + profit))
+                    prt(str('Balanse: ' + new_balans))
+            # for j in range(0, len(temp_arr) - 1):
+            #     maxpos = (my_balans // get_symbol_price(i)) // 10
+            #     delta = temp_arr[j][0]
+            #     contracts = temp_arr[j][1]
+            #     if (symb_pr < (entr_pr + delta)):
+            #         close_position(symbol=i, s_l='short', quantity_l=
+            #         abs(round(maxpos * (contracts / 10), 3)))  # зарыть контракты из массива
+            #         new_balans = get_profit_balance()[1]
+            #         del proffit_array[0]
     except:
         pass
 
@@ -230,7 +265,7 @@ def opened_new_position():
                 new_position_long.remove(i)
                 open_position(symbol=i, s_l='long', quantity_l=maxpos)
                 new_balans = get_profit_balance()[1]
-                prt('Open Position : Long: ' + i + ' ' + maxpos)
+                prt('Open Position : Long: ' + i + ' ' + str(maxpos))
                 if new_balans != 0:
                     profit = new_balans - my_balans
                     prt(str('Profit: ' + profit))
@@ -245,7 +280,7 @@ def opened_new_position():
                 new_position_short.remove(i)
                 open_position(symbol=i, s_l='short', quantity_l=maxpos)
                 new_balans = get_profit_balance()[1]
-                prt('Open Position : Short: ' + i + ' ' + maxpos)
+                prt('Open Position : Short: ' + i + ' ' + str(maxpos))
                 if new_balans != 0:
                     profit = new_balans - my_balans
                     prt(str('Profit: ' + profit))
@@ -284,14 +319,11 @@ if __name__ == '__main__':
                     longs.append(data['SYMBOL'])
                     new_position_long.append(data['SYMBOL'])
                     print(new_position_long)
-                    try:
-                        opened_new_position()
-                    except:
-                        print('No Pos Buy')
-                    try:
-                        profit_and_stop_loss()
-                    except:
-                        pass
+                    # try:
+                    #     opened_new_position()
+                    #     prt('Позиция LONG открыта '+ i)
+                    # except:
+                    #     print('No Pos Buy')
                 if (data['RECOMMENDATION'] == 'STRONG_SELL' and (
                         data['SYMBOL'] not in shorts)):  # если появляется в индикаторах новый сигнал,и его нет в старых
                     print(data['SYMBOL'], 'Sell')
@@ -300,15 +332,21 @@ if __name__ == '__main__':
                     shorts.append(data['SYMBOL'])
                     new_position_short.append(data['SYMBOL'])
                     print(new_position_short)
-                    try:
-                        opened_new_position()
-                    except:
-                        print('No Pos Sell')
-                    try:
-                        profit_and_stop_loss()
-                    except:
-                        pass
-                time.sleep(0.1)
+                    # try:
+                    #     opened_new_position()
+                    #     prt('Позиция SHORT открыта '+ i)
+                    # except:
+                    #     print('No Pos Sell')
+                try:
+                    opened_new_position()
+                    #prt('Позиция открыта ' + i)
+                except:
+                    pass
+                try:
+                    profit_and_stop_loss()
+                    #prt('Позиция закрыта')
+                except:
+                    pass
 
             except:
-                prt('повторяю цикл.')
+                print('повторяю цикл.')

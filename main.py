@@ -9,7 +9,7 @@ from binance.client import Client
 import pandas as pd
 import copy
 
-INTERVAL = Interval.INTERVAL_5_MINUTES  # желательно 4ч - или дневные для этой стратегии
+INTERVAL = Interval.INTERVAL_4_HOURS  # желательно 4ч - или дневные для этой стратегии
 
 TOKEN = '5886578012:AAHIPhYEMgf_UxqbLDR0v5NJc7XjY-0X5AI'
 CHAT = '624736798'
@@ -221,29 +221,30 @@ def profit_and_stop_loss():
 
 
 def opened_new_position():
+    my_balans = get_profit_balance()[1]
     try:
         for i in new_position_long:
             if i not in opened_position_long:
-                maxpos = (my_balans // get_symbol_price(i)) // 10
-                open_position(symbol=i, s_l='long', quantity_l=maxpos)
-                new_balans = get_profit_balance()[1]
+                maxpos = round((my_balans // get_symbol_price(i)) // 10,1)
                 opened_position_long.append(i)
                 new_position_long.remove(i)
+                open_position(symbol=i, s_l='long', quantity_l=maxpos)
+                new_balans = get_profit_balance()[1]
                 prt('Open Position : Long: ' + i + ' ' + maxpos)
                 if new_balans != 0:
                     profit = new_balans - my_balans
                     prt(str('Profit: ' + profit))
                     prt(str('Balanse: ' + new_balans))
     except:
-        prt('не открыл позицию')
+        pass
     try:
         for i in new_position_short:
             if i not in opened_position_short:
-                maxpos = (my_balans // get_symbol_price(i)) // 10
-                open_position(symbol=i, s_l='short', quantity_l=maxpos)
-                new_balans = get_profit_balance()[1]
+                maxpos = round((my_balans // get_symbol_price(i)) // 10,1)
                 opened_position_short.append(i)
                 new_position_short.remove(i)
+                open_position(symbol=i, s_l='short', quantity_l=maxpos)
+                new_balans = get_profit_balance()[1]
                 prt('Open Position : Short: ' + i + ' ' + maxpos)
                 if new_balans != 0:
                     profit = new_balans - my_balans
@@ -255,7 +256,7 @@ def opened_new_position():
 
 def prt(message):
     print(message)
-    send_message(message)
+    send_message('I-bot: '+str(message))
 
 print('Start')
 send_message('Start')
@@ -283,6 +284,14 @@ if __name__ == '__main__':
                     longs.append(data['SYMBOL'])
                     new_position_long.append(data['SYMBOL'])
                     print(new_position_long)
+                    try:
+                        opened_new_position()
+                    except:
+                        print('No Pos Buy')
+                    try:
+                        profit_and_stop_loss()
+                    except:
+                        pass
                 if (data['RECOMMENDATION'] == 'STRONG_SELL' and (
                         data['SYMBOL'] not in shorts)):  # если появляется в индикаторах новый сигнал,и его нет в старых
                     print(data['SYMBOL'], 'Sell')
@@ -291,13 +300,15 @@ if __name__ == '__main__':
                     shorts.append(data['SYMBOL'])
                     new_position_short.append(data['SYMBOL'])
                     print(new_position_short)
+                    try:
+                        opened_new_position()
+                    except:
+                        print('No Pos Sell')
+                    try:
+                        profit_and_stop_loss()
+                    except:
+                        pass
                 time.sleep(0.1)
-                try:
-                    opened_new_position()
-                except:
-                    prt('Не вышло открыть позицию...')
 
             except:
                 prt('повторяю цикл.')
-
-НАСТРОИТЬ ЦЕНУ ПОКУПКИ ДЛЯ МОНЕТ(КОЛИЧЕСТВО ПОКУПКИ ,ЧТОБЫ ПОКУПАТЬ ВЫШЕ МИНИМАЛКИ)
